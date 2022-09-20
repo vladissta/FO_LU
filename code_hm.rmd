@@ -3,6 +3,8 @@
 library(dichromat)
 library(tidyverse)
 library(sleuth)
+library(superheat)
+library(pheatmap)
 ```
 
 ```{r}
@@ -37,7 +39,7 @@ counts_hm = counts_all %>% select(target_id, sample, est_counts) %>%
   pivot_wider(names_from = target_id, values_from = est_counts) %>%
   column_to_rownames(v = 'sample')
 
-colnames(counts_hm) = gsub('MI39','',colnames(c_tpm_hm_centered))
+colnames(counts_hm) = gsub('MI39','',colnames(counts_hm))
 ```
 
 ```{r}
@@ -52,14 +54,15 @@ colnames(c_tpm_hm_centered) = gsub('MI39','',colnames(c_tpm_hm_centered))
 
 **HEATMAPS**
 
-```{r}
-superheat::superheat(as.matrix(c_tpm_hm_centered), bottom.label.text.size = 4, 
-                     bottom.label.text.angle = 50,
-                     left.label.text.size = 4,
-                     title = 'TPM of SIX genes in each sample')
+```{r fig.height=7, fig.width=7}
+superheat(as.matrix(c_tpm_hm_centered), bottom.label.text.size = 4, 
+          bottom.label.text.angle = 50,
+          left.label.text.size = 4,
+          title = 'TPM of SIX genes in each sample')
 
 
-pheatmap::pheatmap(countz, cluster_rows = F, cluster_cols = F,
-                   color = c('white', colorRampPalette(c('lightblue','firebrick'))(10000)), 
-                   display_numbers = F, number_color = 'black', main = 'Counts of SIX genes in each sample')
+pheatmap(counts_hm, cluster_rows = F, cluster_cols = F, 
+         color = c('white', colorRampPalette(c('lightblue','firebrick'))(10000)), 
+         display_numbers = F, number_color = 'black', 
+         main = 'Counts of SIX genes in each sample')
 ```
