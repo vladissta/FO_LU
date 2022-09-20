@@ -1,0 +1,65 @@
+
+```{r}
+library(dichromat)
+library(tidyverse)
+library(sleuth)
+```
+
+```{r}
+counts = function(df){
+  so = sleuth_prep(df, extra_bootstrap_summary = T, read_bootstrap_tpm = TRUE, ~conditions)
+  return(so$obs_norm)
+}
+```
+
+
+```{r}
+sample_id_FO = dir(file.path("~/R/Fus_plots/kallisto_FO_3/"))
+
+dirs_FO <- sapply(sample_id_FO, function(id) file.path('~/R/Fus_plots/kallisto_FO_3/', id))
+cond_FO = rep(c( 'AtF3', 'AtF5', 'AtK3', 'AtK5', 'FO', 'LMF3', 'LMF5', 'LMK3', 'LMK5'), each = 3)
+
+df_FO = data.frame(sample = sample_id_FO, path = dirs_FO, conditions = cond_FO)
+df_FO = df_FO %>% mutate(conditions = as.factor(conditions))
+
+```
+
+```{r}
+counts_all = counts(df_FO) 
+counts_all = counts_all %>% filter(str_detect(target_id, "SIX"))
+counts_all$target_id = gsub("_", " ", counts_all$target_id)
+counts_all$sample = gsub("_", " ", counts_all$sample)
+counts_all$sample = str_remove(counts_all$sample, '.k31')
+```
+
+```{r}
+counts_hm = counts_all %>% select(target_id, sample, est_counts) %>% 
+  pivot_wider(names_from = target_id, values_from = est_counts) %>%
+  column_to_rownames(v = 'sample')
+
+colnames(counts_hm) = gsub('MI39','',colnames(c_tpm_hm_centered))
+```
+
+```{r}
+c_tpm = counts_all %>% select(target_id, sample, tpm)
+
+c_tpm_hm = pivot_wider(c_tpm, names_from = target_id, values_from = tpm)
+c_tpm_hm = c_tpm_hm %>% column_to_rownames('sample') 
+
+c_tpm_hm_centered = c_tpm_hm - rowMeans(c_tpm_hm)
+colnames(c_tpm_hm_centered) = gsub('MI39','',colnames(c_tpm_hm_centered))
+```
+
+**HEATMAPS**
+
+```{r}
+superheat::superheat(as.matrix(c_tpm_hm_centered), bottom.label.text.size = 4, 
+                     bottom.label.text.angle = 50,
+                     left.label.text.size = 4,
+                     title = 'TPM of SIX genes in each sample')
+
+
+pheatmap::pheatmap(countz, cluster_rows = F, cluster_cols = F,
+                   color = c('white', colorRampPalette(c('lightblue','firebrick'))(10000)), 
+                   display_numbers = F, number_color = 'black', main = 'Counts of SIX genes in each sample')
+```
